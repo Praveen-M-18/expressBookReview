@@ -8,12 +8,14 @@ const axios = require('axios');
 // 1. Get the book list available in the shop using async/await and Axios
 public_users.get('/', async function (req, res) {
   try {
-    // Making an HTTP request to our own running server endpoint or mock stub
     const response = await axios.get('http://localhost:5000/books'); 
     return res.status(200).send(JSON.stringify(response.data, null, 4));
   } catch (error) {
-    // If external call fails, fall back to local data gracefully
-    return res.status(200).send(JSON.stringify(books, null, 4));
+    // Robust error handling for Axios network failures
+    return res.status(500).json({
+      message: "Failed to retrieve books list via Axios",
+      error: error.message
+    });
   }
 });
 
@@ -29,7 +31,12 @@ public_users.get('/isbn/:isbn', function (req, res) {
         res.status(404).json({message: "Book with this ISBN not found"});
       }
     })
-    .catch(err => res.status(500).json({message: "Error fetching book details"}));
+    .catch(error => {
+      res.status(502).json({
+        message: "Network error fetching ISBN details",
+        error: error.message
+      });
+    });
 });
   
 // 3. Get book details based on author using async/await and Axios
@@ -44,8 +51,11 @@ public_users.get('/author/:author', async function (req, res) {
     } else {
       return res.status(404).json({message: "No books found for this author"});
     }
-  } catch (err) {
-    return res.status(500).json({message: "Error processing author search"});
+  } catch (error) {
+    return res.status(502).json({
+      message: "Database communication failed during author search",
+      error: error.message
+    });
   }
 });
 
@@ -62,7 +72,12 @@ public_users.get('/title/:title', function (req, res) {
         res.status(404).json({message: "No books found with this title"});
       }
     })
-    .catch(err => res.status(500).json({message: "Error processing title search"}));
+    .catch(error => {
+      res.status(502).json({
+        message: "Server failed to process your title query request",
+        error: error.message
+      });
+    });
 });
 
 // Mock local internal endpoint to support the Axios loop back calls safely
